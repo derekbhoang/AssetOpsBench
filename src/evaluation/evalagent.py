@@ -160,10 +160,10 @@ class EvaluationAgent:
         # print(f'INITIAL PROMPT = {prompt}')
         for it_index in range(self.max_retries):
 
-            print(f'prompt = {prompt}')
+            # print(f'prompt = {prompt}')
 
             review_result = self.llm.generate(prompt, temperature=self.temperature)
-            print(f'review_result = >{review_result}<')
+            # print(f'review_result = >{review_result}<')
 
             # review_resultFull = json.loads(review_resultFullJSON)
 
@@ -199,7 +199,7 @@ class EvaluationAgent:
                 agent_response,
                 parsed_result,
                 it_index,
-                review_resultFull,
+                review_result,
                 characteristic_answer,
             )
 
