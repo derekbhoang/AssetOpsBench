@@ -9,7 +9,7 @@ class EvaluationAgent:
     of an AI agent's response based on given criteria as well as characteristic of answer.
     """
 
-    def __init__(self, llm=None, model_id=6, max_retries=3):
+    def __init__(self, llm=None, model_id=6, max_retries=3, temperature=0.0):
         """
         Initialize the EvaluationAgent.
 
@@ -21,6 +21,7 @@ class EvaluationAgent:
         self.llm = llm
         self.model_id = model_id
         self.max_retries = max_retries
+        self.temperature = temperature
 
     def extract_and_parse_json_using_manual_parser(self, response):
 
@@ -161,7 +162,7 @@ class EvaluationAgent:
 
             print(f'prompt = {prompt}')
 
-            review_result = self.llm.generate(prompt)
+            review_result = self.llm.generate(prompt, temperature=self.temperature)
             print(f'review_result = >{review_result}<')
 
             # review_resultFull = json.loads(review_resultFullJSON)

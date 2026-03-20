@@ -138,6 +138,7 @@ stats = {
 }
 
 llm = LiteLLMBackend('watsonx/meta-llama/llama-4-maverick-17b-128e-instruct-fp8')
+evalAgent = EvaluationAgent(llm, temperature=TEMP) 
 
 prefix = 'src/evaluation/'
 suffix = '.json' 
@@ -182,7 +183,6 @@ for fn in ['src/evaluation/0001.json']:
         itemStats[key] = 0
 
     for v in range(NUM_ITER):
-        evalAgent = EvaluationAgent(llm) 
 
         print(f"text = {characteristic['text']}")
         print(f"answer = {traj['final_answer']}")
