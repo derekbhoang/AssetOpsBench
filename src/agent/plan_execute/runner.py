@@ -1,4 +1,4 @@
-"""Entry-point runner for the plan-execute workflow using MCP servers.
+"""Plan-and-execute agent runner using MCP servers as tool providers.
 
 Replaces AgentHive's combination of PlanningWorkflow + SequentialWorkflow with
 an MCP-native implementation:
@@ -17,11 +17,12 @@ from pathlib import Path
 
 from llm import LLMBackend
 
-_log = logging.getLogger(__name__)
-
 from .executor import Executor
-from .models import OrchestratorResult
 from .planner import Planner
+from ..models import OrchestratorResult
+from ..runner import AgentRunner
+
+_log = logging.getLogger(__name__)
 
 _SUMMARIZE_PROMPT = """\
 You are summarizing the results of a multi-step task execution for an \
@@ -37,12 +38,12 @@ above. Do not repeat the individual steps — just give the final answer.
 """
 
 
-class PlanExecuteRunner:
+class PlanExecuteRunner(AgentRunner):
     """Entry-point for plan-and-execute workflows using MCP servers as tool providers.
 
     Usage::
 
-        from plan_execute import PlanExecuteRunner
+        from agent import PlanExecuteRunner
         from llm import LiteLLMBackend
 
         runner = PlanExecuteRunner(llm=LiteLLMBackend("watsonx/meta-llama/llama-3-3-70b-instruct"))
@@ -51,7 +52,7 @@ class PlanExecuteRunner:
 
     Args:
         llm: LLM backend used for planning, tool selection, and summarisation.
-        server_paths: Override MCP server specs.  Keys must match the agent
+        server_paths: Override MCP server specs.  Keys must match the server
                       names the planner will assign steps to.  Values are
                       either a uv entry-point name (str) or a Path to a
                       script file.  Defaults to all five registered servers.
@@ -62,7 +63,7 @@ class PlanExecuteRunner:
         llm: LLMBackend,
         server_paths: dict[str, Path | str] | None = None,
     ) -> None:
-        self._llm = llm
+        super().__init__(llm, server_paths)
         self._planner = Planner(llm)
         self._executor = Executor(llm, server_paths)
 
@@ -70,7 +71,7 @@ class PlanExecuteRunner:
         """Run the full plan-execute loop for a question.
 
         Steps:
-          1. Discover available agents from registered MCP servers.
+          1. Discover available servers from registered MCP servers.
           2. Use the LLM to decompose the question into an execution plan.
           3. Execute each plan step by routing tool calls to MCP servers.
           4. Summarise the step results into a final answer.
@@ -83,12 +84,12 @@ class PlanExecuteRunner:
             the per-step execution history.
         """
         # 1. Discover
-        _log.info("Discovering agent capabilities...")
-        agent_descriptions = await self._executor.get_agent_descriptions()
+        _log.info("Discovering server capabilities...")
+        server_descriptions = await self._executor.get_server_descriptions()
 
         # 2. Plan
         _log.info("Planning...")
-        plan = self._planner.generate_plan(question, agent_descriptions)
+        plan = self._planner.generate_plan(question, server_descriptions)
         _log.info("Plan has %d step(s).", len(plan.steps))
 
         # 3. Execute
@@ -97,7 +98,7 @@ class PlanExecuteRunner:
         # 4. Summarise
         _log.info("Summarising...")
         results_text = "\n\n".join(
-            f"Step {r.step_number} — {r.task} (agent: {r.agent}):\n"
+            f"Step {r.step_number} — {r.task} (server: {r.server}):\n"
             + (r.response if r.success else f"ERROR: {r.error}")
             for r in history
         )

@@ -12,7 +12,7 @@ class PlanStep:
 
     step_number: int
     task: str
-    agent: str
+    server: str
     tool: str
     tool_args: dict
     dependencies: list[int]
@@ -56,7 +56,7 @@ class StepResult:
 
     step_number: int
     task: str
-    agent: str
+    server: str
     response: str
     error: Optional[str] = None
     tool: str = ""
@@ -65,13 +65,3 @@ class StepResult:
     @property
     def success(self) -> bool:
         return self.error is None
-
-
-@dataclass
-class OrchestratorResult:
-    """Final result from the plan-execute orchestrator."""
-
-    question: str
-    answer: str
-    plan: Plan
-    history: list[StepResult]
